@@ -1,0 +1,6 @@
+streamlit>=1.65.0
+pandas>=3.0.6
+plotly>=7.1.0
+fpdf2>=2.8.9
+pypdf>=6.20.0
+cryptography>=50.0.2
