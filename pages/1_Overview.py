@@ -2,10 +2,12 @@
 
 import streamlit as st
 
+from insights import smart_insights
 from overview_charts import (
     assets_donut, compact_currency, country_net_worth, full_currency,
     holdings_treemap, portfolio_totals,
 )
+from ui import NEGATIVE
 
 st.title("Overview")
 if st.session_state.get("data_error"):
@@ -17,16 +19,24 @@ currency = st.session_state["base_currency"]
 colors = st.session_state["asset_type_colors"]
 totals = portfolio_totals(holdings)
 
+insights = smart_insights(holdings, currency, st.session_state["benchmark_return_pct"])
+if insights:
+    with st.container(border=True, key="smart_insights"):
+        st.subheader(":material/lightbulb: Smart insights")
+        for icon, label, text in insights:
+            st.markdown(f":material/{icon}: **{label}** · {text}")
+        st.caption("Worked out from your own numbers and current filters. Not financial advice.")
+
 # Scope the requested red liability value to this card only.
-st.html("""
+st.html(f"""
 <style>
-.st-key-liabilities_kpi [data-testid="stMetricValue"] { color: #D8524F; }
+.st-key-liabilities_kpi [data-testid="stMetricValue"] {{ color: {NEGATIVE}; }}
 </style>
 """)
 net_col, assets_col, liabilities_col, ratio_col = st.columns(4)
 for column, label, value in (
-    (net_col, "Net worth", totals["net_worth"]),
-    (assets_col, "Total assets", totals["assets"]),
+    (net_col, ":material/account_balance: Net worth", totals["net_worth"]),
+    (assets_col, ":material/savings: Total assets", totals["assets"]),
 ):
     column.metric(
         label, compact_currency(value, currency),
@@ -35,13 +45,13 @@ for column, label, value in (
 with liabilities_col:
     with st.container(key="liabilities_kpi"):
         st.metric(
-            "Total liabilities", compact_currency(totals["liabilities"], currency),
+            ":material/credit_card: Total liabilities", compact_currency(totals["liabilities"], currency),
             help=f"Full value: {full_currency(totals['liabilities'], currency)}",
             border=True,
         )
 ratio = totals["debt_ratio"]
 ratio_col.metric(
-    "Debt-to-asset ratio", f"{ratio:.1f}%" if ratio is not None else "N/A",
+    ":material/percent: Debt-to-asset ratio", f"{ratio:.1f}%" if ratio is not None else "N/A",
     help=(
         f"Liabilities ÷ assets × 100 = {ratio:.2f}%"
         if ratio is not None else "Undefined because the filtered portfolio has no asset value."
@@ -67,12 +77,12 @@ with country_col:
     st.plotly_chart(
         country_net_worth(holdings, currency), width="stretch", key="country_net_worth"
     )
-    st.caption("Assets minus liabilities. Country totals use a single neutral colour.")
+    st.caption("Assets minus liabilities in each country.")
 
 st.subheader("Holdings by country and asset type")
 st.caption(
-    "Tile size represents current value, including positive outstanding liability balances. "
-    "Asset-type colours match the donut; country headers are neutral."
+    "Tile size shows current value, including outstanding debt balances. "
+    "Colours match the asset-type chart above; debts are grey."
 )
 treemap = holdings_treemap(holdings, currency, colors)
 if treemap is None:

@@ -21,12 +21,12 @@ if liabilities.empty:
 total, count, weighted_rate = debt_summary(liabilities)
 debt_col, count_col, rate_col = st.columns(3)
 debt_col.metric(
-    "Total outstanding debt", compact_currency(total, currency),
+    ":material/account_balance_wallet: Total outstanding debt", compact_currency(total, currency),
     help=f"Full value: {full_currency(total, currency)}", border=True,
 )
-count_col.metric("Number of liabilities", count, border=True)
+count_col.metric(":material/format_list_numbered: Number of liabilities", count, border=True)
 rate_col.metric(
-    "Weighted average interest rate",
+    ":material/percent: Weighted average interest rate",
     f"{weighted_rate:.2f}%" if weighted_rate is not None else "N/A",
     help=(
         "Sum of interest rate × outstanding balance, divided by total outstanding "

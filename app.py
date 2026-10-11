@@ -7,7 +7,7 @@ from data_loader import (
     CSVNotice, DEFAULT_FX_PATH, SUPPORTED_BASE_CURRENCIES, filter_holdings, load_data,
 )
 from overview_charts import asset_type_colors, filter_caption
-from ui import ASSETS_DIR, apply_branding
+from ui import ASSETS_DIR, apply_branding, sidebar_footer
 
 st.set_page_config(
     page_title="Family Wealth Navigator", page_icon=str(ASSETS_DIR / "icon.svg"),
@@ -16,22 +16,64 @@ st.set_page_config(
 apply_branding()
 
 
+FEATURES = (
+    (
+        "hub", "See everything in one place",
+        "Property, gold, savings, investments and debts across countries, "
+        "shown together in one currency.",
+        ("overview", "holdings"),
+    ),
+    (
+        "insights", "Know what's working",
+        "See which assets beat your benchmark, which are standing still, "
+        "and which debt costs you the most.",
+        ("performance", "liabilities"),
+    ),
+    (
+        "family_restroom", "Keep your family ready",
+        "Find missing nominees, contacts and documents, then create an encrypted "
+        "guide your family can open if you're ever unreachable.",
+        ("readiness", "wealth_map"),
+    ),
+)
+
+
 def home():
-    st.title("Family Wealth Navigator")
-    st.write("See your family's wealth in one place, across countries and currencies.")
-    st.markdown(
-        "**Home** — Start here for a quick guide to the app.\n\n"
-        "**Overview** — See net worth, assets, debts, and how they are spread.\n\n"
-        "**Holdings** — Search and filter every asset and liability.\n\n"
-        "**Performance** — Compare asset growth with your chosen benchmark.\n\n"
-        "**Liabilities** — Review outstanding debts, interest rates, and repayments.\n\n"
-        "**Readiness Check** — Find gaps in contacts, documents, and access instructions.\n\n"
-        "**Family Wealth Map** — Create an encrypted family guide, share it, and manage check-ins."
-    )
+    with st.container(key="hero"):
+        st.html('<div class="fwn-eyebrow">Your family\'s wealth, organised</div>')
+        st.title("Family Wealth Navigator")
+        st.write(
+            "One clear view of everything your family owns and owes, "
+            "across countries and currencies."
+        )
+        with st.container(horizontal=True):
+            if st.button(
+                "Get started", type="primary", icon=":material/arrow_forward:",
+                key="hero_overview",
+            ):
+                st.switch_page(PAGES["overview"])
+            if st.button(
+                "Create your Family Wealth Map", icon=":material/family_restroom:",
+                key="hero_wealth_map",
+            ):
+                st.switch_page(PAGES["wealth_map"])
     if st.session_state.get("data_error"):
         st.error(st.session_state["data_error"])
-    else:
-        st.info(source_notice)
+
+    for index, (column, (icon, heading, text, links)) in enumerate(
+        zip(st.columns(3), FEATURES)
+    ):
+        with column.container(border=True, height="stretch", key=f"feature_card_{index}"):
+            with st.container(key=f"feature_icon_{index}"):
+                st.markdown(f":material/{icon}:")
+            st.subheader(heading)
+            st.write(text)
+            for name in links:
+                st.page_link(PAGES[name])
+    st.caption(
+        ":material/lock: No account and no database. Files you upload stay in "
+        "this browser session."
+    )
 
 
 st.sidebar.header("Data settings")
@@ -55,14 +97,11 @@ uploaded_fx = st.sidebar.file_uploader(
     ),
 )
 
-if uploaded_holdings is None and uploaded_fx is None:
-    source_notice = "Demo data – fictional family, with fixed demo exchange rates (not live)."
-elif uploaded_holdings is None:
-    source_notice = "Fictional demo holdings use your uploaded exchange rates (not live)."
-elif uploaded_fx is None:
-    source_notice = "Your uploaded holdings use fixed demo exchange rates (not live)."
-else:
-    source_notice = "Using your uploaded holdings and exchange rates (not live)."
+if public_demo_enabled():
+    st.sidebar.caption(
+        "Public demo: please don't upload real financial information. "
+        "Nothing you enter is saved."
+    )
 
 st.session_state["data_error"] = None
 st.session_state["data_notice"] = None
@@ -84,11 +123,11 @@ except (OSError, ValueError) as error:
         st.session_state.pop(key, None)
 else:
     st.session_state["fx_rates"] = rates
-    st.sidebar.caption(source_notice)
     with st.sidebar.expander("Valuation exchange rates and dates"):
         st.caption(
             f"Values convert through AED to {base_currency}. "
-            "Each rate is AED per 1 unit of currency. Dates come from the FX CSV."
+            "Each rate is AED per 1 unit of currency. Rates are fixed, not live; "
+            "dates come from the FX CSV."
         )
         rate_details = rates[["currency", "rate_to_aed", "as_of"]].copy()
         rate_details["as_of"] = rate_details["as_of"].map(
@@ -135,46 +174,45 @@ st.sidebar.slider(
     key="benchmark_return_pct",
 )
 
-page = st.navigation(
-    {
-        "": [
-            st.Page(home, title="Home", icon=":material/home:", default=True),
-        ],
-        "Portfolio": [
-            st.Page(
-                "pages/1_Overview.py", title="Overview",
-                icon=":material/space_dashboard:", url_path="overview",
-            ),
-            st.Page(
-                "pages/2_Holdings.py", title="Holdings",
-                icon=":material/account_balance_wallet:", url_path="holdings",
-            ),
-            st.Page(
-                "pages/3_Performance.py", title="Performance",
-                icon=":material/trending_up:", url_path="performance",
-            ),
-            st.Page(
-                "pages/4_Liabilities.py", title="Liabilities",
-                icon=":material/credit_card:", url_path="liabilities",
-            ),
-        ],
-        "Family": [
-            st.Page(
-                "pages/5_Readiness_Check.py", title="Readiness Check",
-                icon=":material/fact_check:", url_path="readiness",
-            ),
-            st.Page(
-                "pages/6_Family_Wealth_Map.py", title="Family Wealth Map",
-                icon=":material/family_restroom:", url_path="wealth-map",
-            ),
-        ],
-    }
+sidebar_footer(
+    "Sample data – fictional family" if uploaded_holdings is None
+    else "Your uploaded data – not saved"
 )
-if public_demo_enabled():
-    st.warning(
-        "Demo with fictional data. Please don't upload real financial information "
-        "– nothing you enter is saved."
-    )
+
+PAGES = {
+    "home": st.Page(home, title="Home", icon=":material/home:", default=True),
+    "overview": st.Page(
+        "pages/1_Overview.py", title="Overview",
+        icon=":material/space_dashboard:", url_path="overview",
+    ),
+    "holdings": st.Page(
+        "pages/2_Holdings.py", title="Holdings",
+        icon=":material/account_balance_wallet:", url_path="holdings",
+    ),
+    "performance": st.Page(
+        "pages/3_Performance.py", title="Performance",
+        icon=":material/trending_up:", url_path="performance",
+    ),
+    "liabilities": st.Page(
+        "pages/4_Liabilities.py", title="Liabilities",
+        icon=":material/credit_card:", url_path="liabilities",
+    ),
+    "readiness": st.Page(
+        "pages/5_Readiness_Check.py", title="Readiness Check",
+        icon=":material/fact_check:", url_path="readiness",
+    ),
+    "wealth_map": st.Page(
+        "pages/6_Family_Wealth_Map.py", title="Family Wealth Map",
+        icon=":material/family_restroom:", url_path="wealth-map",
+    ),
+}
+page = st.navigation({
+    "": [PAGES["home"]],
+    "Portfolio": [
+        PAGES["overview"], PAGES["holdings"], PAGES["performance"], PAGES["liabilities"],
+    ],
+    "Family": [PAGES["readiness"], PAGES["wealth_map"]],
+})
 if st.session_state.get("data_notice"):
     st.info(st.session_state["data_notice"])
 else:

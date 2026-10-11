@@ -3,10 +3,10 @@
 import plotly.express as px
 
 LABEL_COLORS = {
-    "Performing": "#44986D",
-    "Stagnant": "#D99B16",
+    "Performing": "#0E9C8F",
+    "Stagnant": "#E0A019",
     "Losing": "#D8524F",
-    "Cash – not rated": "#979797",
+    "Cash – not rated": "#9AA5B1",
 }
 
 
@@ -64,7 +64,7 @@ def performance_chart(assets, benchmark):
         hovertemplate="%{y}<br>CAGR: %{x:.2f}%<extra>%{fullData.name}</extra>"
     )
     figure.add_vline(
-        x=benchmark, line_dash="dash", line_color="#555555",
+        x=benchmark, line_dash="dash", line_color="#5B6B7F",
         annotation_text=f"Benchmark {benchmark}%",
         annotation_position="top",
     )

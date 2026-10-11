@@ -4,6 +4,7 @@ import streamlit as st
 
 from overview_charts import compact_currency, full_currency
 from performance import asset_performance, performance_chart
+from ui import style_chart
 
 st.title("Performance")
 if st.session_state.get("data_error"):
@@ -14,11 +15,13 @@ currency = st.session_state["base_currency"]
 benchmark = st.session_state["benchmark_return_pct"]
 assets = asset_performance(st.session_state["filtered_holdings"], benchmark)
 
-for column, label in zip(st.columns(3), ("Performing", "Stagnant", "Losing")):
+for column, (label, icon) in zip(st.columns(3), (
+    ("Performing", "trending_up"), ("Stagnant", "trending_flat"), ("Losing", "trending_down"),
+)):
     group = assets.loc[assets["label"].eq(label)]
     total_value = float(group["current_value_base"].sum())
     column.metric(
-        f"{label} — {len(group)} assets",
+        f":material/{icon}: {label} — {len(group)} assets",
         compact_currency(total_value, currency),
         help=f"Total current value: {full_currency(total_value, currency)}",
         border=True,
@@ -33,6 +36,12 @@ chart = performance_chart(assets, benchmark)
 if chart is None:
     st.info("No assets have a calculable CAGR.")
 else:
+    style_chart(chart)
+    chart.update_traces(
+        marker_cornerradius=4,
+        hovertemplate="<b>%{y}</b><br>CAGR: %{x:.2f}%<extra>%{fullData.name}</extra>",
+    )
+    chart.update_yaxes(title_text=None, showgrid=False)
     st.plotly_chart(chart, width="stretch", key="performance_cagr")
 
 table = assets[[

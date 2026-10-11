@@ -4,6 +4,8 @@ from math import isfinite
 
 import plotly.graph_objects as go
 
+from ui import CHART_PRIMARY, CHART_SECONDARY, style_chart
+
 
 def liability_data(holdings):
     liabilities = holdings.loc[holdings["category"].eq("Liability")].copy()
@@ -31,19 +33,20 @@ def debt_summary(liabilities):
 def liability_chart(liabilities, currency):
     figure = go.Figure()
     for column, label, color in (
-        ("purchase_value_base", "Original amount", "#61A9BD"),
-        ("current_value_base", "Outstanding balance", "#1F74AD"),
+        ("purchase_value_base", "Original amount", CHART_SECONDARY),
+        ("current_value_base", "Outstanding balance", CHART_PRIMARY),
     ):
         figure.add_trace(go.Bar(
             name=label, y=liabilities["item_name"], x=liabilities[column],
-            orientation="h", marker_color=color,
-            hovertemplate=f"%{{y}}<br>{currency} %{{x:,.2f}}<extra>{label}</extra>",
+            orientation="h", marker_color=color, marker_cornerradius=4,
+            hovertemplate=f"<b>%{{y}}</b><br>{label}: {currency} %{{x:,.2f}}<extra></extra>",
         ))
     figure.update_layout(
         barmode="group",
         xaxis_title=f"Amount ({currency})",
-        yaxis_title="Liability",
+        yaxis=dict(showgrid=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
         height=max(360, len(liabilities) * 70 + 100),
-        margin=dict(t=20, b=20, l=10, r=10),
+        margin=dict(t=40, b=20, l=10, r=10),
     )
-    return figure
+    return style_chart(figure)
