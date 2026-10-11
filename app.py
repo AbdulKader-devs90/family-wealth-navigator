@@ -81,13 +81,13 @@ base_currency = st.sidebar.selectbox(
     "Base currency", SUPPORTED_BASE_CURRENCIES, key="base_currency"
 )
 uploaded_holdings = st.sidebar.file_uploader(
-    "Replace demo holdings CSV",
+    "Upload your holdings (CSV)",
     type=["csv"],
     key="holdings_upload",
-    help="Upload a holdings CSV with the same required columns as the demo file.",
+    help="Use the same columns as the sample file. Remove the upload to go back to the sample data.",
 )
 uploaded_fx = st.sidebar.file_uploader(
-    "Replace demo FX rates CSV (optional)",
+    "Upload exchange rates (CSV, optional)",
     type=["csv"],
     key="fx_upload",
     help=(

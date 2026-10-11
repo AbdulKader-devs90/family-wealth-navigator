@@ -7,7 +7,7 @@ from readiness import check_readiness
 
 
 def _name(value):
-    text = "" if value is None or value != value else str(value).strip()
+    text = value.strip() if isinstance(value, str) else ""
     # Keep item names literal inside Markdown.
     return (text or "Unspecified").replace("$", "\\$").replace("*", "\\*")
 

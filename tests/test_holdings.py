@@ -35,8 +35,8 @@ def invalid_uploads():
     yield frame.drop(columns=["currency", "current_value"]).to_csv(index=False), (
         "holdings CSV is missing required columns"
     )
-    yield "", "The CSV file is empty."
-    yield frame.iloc[:0].to_csv(index=False), "at least one holding"
+    yield "", "This CSV is empty."
+    yield frame.iloc[:0].to_csv(index=False), "has no holdings yet"
     yield frame.to_csv(index=False) + '"unterminated', "Could not read the CSV file"
     yield b"\xff\xfe\x00", "must be encoded as UTF-8"
     for column, value, message in (
@@ -86,7 +86,7 @@ class HoldingsValidationTests(unittest.TestCase):
     def test_whitespace_only_csv_is_empty(self):
         for csv in ("\n\n", "   \n\t\n"):
             with self.subTest(csv=csv):
-                with self.assertRaisesRegex(ValueError, "CSV file is empty"):
+                with self.assertRaisesRegex(ValueError, "CSV is empty"):
                     load_holdings(StringIO(csv))
 
     def test_each_date_column_reports_all_invalid_csv_rows(self):

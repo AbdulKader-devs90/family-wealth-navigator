@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from readiness import SEVERITIES, check_readiness, readiness_label
-from ui import TEAL, icon_html, pill, style_chart, type_icon
+from ui import TEAL, icon_html, page_header, pill, style_chart, type_icon
 
 # Plain-language priority, pill tone, and KPI icon for each readiness level.
 PRIORITIES = {
@@ -25,7 +25,7 @@ CHECKS = (
     ("Value is out of date", "Value up to date", None),
 )
 
-st.title("Readiness Check")
+page_header("Readiness Check", "How easily your family could find and access everything.")
 if st.session_state.get("data_error"):
     st.error(st.session_state["data_error"])
     st.stop()
@@ -34,6 +34,7 @@ holdings = st.session_state["filtered_holdings"]
 st.caption(st.session_state["filter_caption"])
 if holdings.empty:
     st.info("No holdings match these filters")
+    st.caption("Try choosing a different country or asset type in the sidebar.")
     st.stop()
 
 items, issues = check_readiness(holdings)
@@ -75,6 +76,7 @@ for column, level in zip(st.columns(4), SEVERITIES):
     name, _, icon = PRIORITIES[level]
     column.metric(
         f":material/{icon}: {name}", int(issues["severity"].eq(level).sum()), border=True,
+        height="stretch",
     )
 
 

@@ -7,9 +7,9 @@ from overview_charts import (
     assets_donut, compact_currency, country_net_worth, full_currency,
     holdings_treemap, portfolio_totals,
 )
-from ui import NEGATIVE
+from ui import NEGATIVE, page_header
 
-st.title("Overview")
+page_header("Overview", "Your net worth at a glance, and where it sits.")
 if st.session_state.get("data_error"):
     st.error(st.session_state["data_error"])
     st.stop()
@@ -41,13 +41,14 @@ for column, label, value in (
     column.metric(
         label, compact_currency(value, currency),
         help=f"Full value: {full_currency(value, currency)}", border=True,
+        height="stretch",
     )
 with liabilities_col:
     with st.container(key="liabilities_kpi"):
         st.metric(
             ":material/credit_card: Total liabilities", compact_currency(totals["liabilities"], currency),
             help=f"Full value: {full_currency(totals['liabilities'], currency)}",
-            border=True,
+            border=True, height="stretch",
         )
 ratio = totals["debt_ratio"]
 ratio_col.metric(
@@ -56,12 +57,13 @@ ratio_col.metric(
         f"Liabilities ÷ assets × 100 = {ratio:.2f}%"
         if ratio is not None else "Undefined because the filtered portfolio has no asset value."
     ),
-    border=True,
+    border=True, height="stretch",
 )
 st.caption(st.session_state["filter_caption"])
 
 if holdings.empty:
     st.info("No holdings match these filters")
+    st.caption("Try choosing a different country or asset type in the sidebar.")
     st.stop()
 
 donut_col, country_col = st.columns(2)

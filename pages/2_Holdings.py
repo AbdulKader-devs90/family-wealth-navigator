@@ -9,9 +9,9 @@ from data_loader import filter_holdings
 from liabilities import liability_data
 from overview_charts import compact_currency
 from performance import asset_performance
-from ui import chips, icon_html, pill, type_icon
+from ui import chips, icon_html, page_header, pill, type_icon
 
-st.title("Holdings")
+page_header("Holdings", "Everything you own and owe, grouped by country.")
 if st.session_state.get("data_error"):
     st.error(st.session_state["data_error"])
     st.stop()

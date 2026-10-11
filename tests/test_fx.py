@@ -40,7 +40,7 @@ class FxTests(unittest.TestCase):
 
     def test_invalid_fx_rows(self):
         for body, message in (
-            ("", "at least one exchange rate"),
+            ("", "no exchange rates yet"),
             (",1,2026-10-01", "blank currency"),
             ("US,1,2026-10-01", "three letters"),
             ("USD,1,2026-10-01\n usd ,2,2026-10-02", "duplicate currency"),

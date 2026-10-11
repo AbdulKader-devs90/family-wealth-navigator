@@ -1,4 +1,4 @@
-﻿"""Shared look and feel: brand colours, chart palette, wordmark, and global CSS."""
+"""Shared look and feel: brand colours, chart palette, wordmark, and global CSS."""
 
 from html import escape
 from pathlib import Path
@@ -257,6 +257,12 @@ def apply_branding():
     st.html(GLOBAL_CSS)
 
 
+def page_header(title, description):
+    """The same title and one-line description at the top of every page."""
+    st.title(title)
+    st.markdown(f":gray[{description}]")
+
+
 def sidebar_footer(text):
     """Small note pinned to the bottom of the sidebar on every page."""
     with st.sidebar.container(key="sidebar_footer"):
@@ -270,7 +276,7 @@ def icon_html(name, extra_class=""):
 
 def type_icon(asset_type, category):
     """Icon name for a holding's type, with a fallback per category."""
-    key = "" if asset_type is None or asset_type != asset_type else str(asset_type)
+    key = asset_type if isinstance(asset_type, str) else ""
     fallback = "account_balance" if category == "Liability" else "category"
     return ASSET_TYPE_ICONS.get(key.strip().casefold(), fallback)
 

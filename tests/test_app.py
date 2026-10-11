@@ -11,6 +11,10 @@ from test_fx import CUSTOM_FX, holdings_csv
 from test_holdings import holdings_frame, invalid_uploads
 
 ROOT = Path(__file__).resolve().parents[1]
+# Recoverable upload problems are shown as a notice in place of the page.
+NOTICES = (
+    "This CSV is empty.", "has no holdings yet", "available for:",
+)
 
 
 class NavigationTests(unittest.TestCase):
@@ -63,13 +67,25 @@ class NavigationTests(unittest.TestCase):
         self.app.run()
         self.assertEqual(list(self.app.exception), [])
 
+    def assert_footer(self, text):
+        self.assertIn(text, " ".join(m.value for m in self.app.sidebar.markdown))
+
     def assert_rejected_holdings(self, message, title):
         self.assertEqual(list(self.app.exception), [])
-        self.assertEqual(self.app.title[0].value, title)
-        self.assertEqual(len(self.app.error), 1)
-        self.assertTrue(self.app.error[0].value.startswith("Could not load portfolio data: "))
-        self.assertIn(message, self.app.error[0].value)
-        self.assertEqual(self.app.session_state["data_error"], self.app.error[0].value)
+        if any(notice in message for notice in NOTICES):
+            self.assertEqual(list(self.app.error), [])
+            self.assertEqual(len(self.app.title), 0)
+            self.assertIn(message, self.app.info[0].value)
+            self.assertEqual(self.app.session_state["data_notice"], self.app.info[0].value)
+            self.assertIsNone(self.app.session_state["data_error"])
+        else:
+            self.assertEqual(self.app.title[0].value, title)
+            self.assertEqual(len(self.app.error), 1)
+            self.assertTrue(
+                self.app.error[0].value.startswith("Could not load portfolio data: ")
+            )
+            self.assertIn(message, self.app.error[0].value)
+            self.assertEqual(self.app.session_state["data_error"], self.app.error[0].value)
         for key in ("holdings", "filtered_holdings", "fx_rates"):
             self.assertNotIn(key, self.app.session_state)
         self.assertEqual(len(self.app.metric), 0)
@@ -97,7 +113,7 @@ class NavigationTests(unittest.TestCase):
                 self.upload("holdings_upload", valid_csv)
                 self.assert_healthy("Family Wealth Navigator")
                 self.assertIsNone(self.app.session_state["data_error"])
-                self.assertIn("Using your uploaded holdings.", self.app.info[0].value)
+                self.assert_footer("Your uploaded data")
                 self.navigate("Holdings")
                 self.assert_ids(["TEST-A", "TEST-L", "TEST-B"])
                 self.navigate("Overview")
@@ -112,19 +128,18 @@ class NavigationTests(unittest.TestCase):
                 self.navigate(page)
                 self.upload("holdings_upload", "")
                 self.assert_rejected_holdings(
-                    "The CSV file is empty.",
+                    "This CSV is empty.",
                     "Family Wealth Navigator" if page == "Home" else page,
                 )
                 self.upload("holdings_upload", None)
                 self.assert_healthy("Family Wealth Navigator" if page == "Home" else page)
                 self.assertIsNone(self.app.session_state["data_error"])
                 self.assertEqual(len(self.app.session_state["holdings"]), 20)
-                if page == "Home":
-                    self.assertIn("Demo data", self.app.info[0].value)
-                elif page == "Overview":
+                self.assert_footer("Sample data – fictional family")
+                if page == "Overview":
                     self.assertEqual(len(self.app.metric), 4)
                     self.assertEqual(len(self.app.get("plotly_chart")), 3)
-                else:
+                elif page == "Holdings":
                     self.assertEqual(len(self.app.dataframe[0].value), 20)
 
     def test_custom_fx_persists_dates_filters_and_base_currency_then_resets(self):
@@ -135,15 +150,10 @@ class NavigationTests(unittest.TestCase):
             self.navigate(page)
             self.assert_shared_selection("India", "Land")
             self.assertIsNotNone(self.app.session_state["fx_upload"])
-            self.assertIn("Using uploaded FX rates (not live).",
-                          [c.value for c in self.app.caption])
-            self.assertEqual(self.app.table[0].value.loc["INR", "as_of"], "2026-10-02")
+            self.assert_footer("Sample data – fictional family")
+            self.assertEqual(self.app.table[0].value.loc["INR", "As of"], "2 Oct 2026")
             if page == "Overview":
                 self.assertEqual(self.app.metric[0].value, "AED 350.00K")
-            elif page == "Home":
-                self.assertIn("Using your uploaded exchange rates",
-                              self.app.info[0].value)
-                self.assertNotIn("fixed demo rates", self.app.info[0].value)
         self.select("base_currency", "USD")
         self.assertEqual(self.app.metric[0].value, "USD 87.50K")
         self.navigate("Holdings")
@@ -152,9 +162,9 @@ class NavigationTests(unittest.TestCase):
         self.upload("fx_upload", None)
         self.navigate("Overview")
         self.assertEqual(self.app.metric[0].value, "USD 79.67K")
-        self.assertEqual(self.app.table[0].value.loc["INR", "as_of"], "2026-09-30")
+        self.assertEqual(self.app.table[0].value.loc["INR", "As of"], "30 Sep 2026")
         self.navigate("Home")
-        self.assertIn("fixed demo rates", self.app.info[0].value)
+        self.assertIsNone(self.app.session_state["fx_upload"])
 
     def test_invalid_fx_blocks_results_on_all_pages_and_recovers(self):
         for csv, message in (
@@ -167,23 +177,26 @@ class NavigationTests(unittest.TestCase):
         ):
             with self.subTest(message=message):
                 self.upload("fx_upload", csv)
+                is_notice = any(notice in message for notice in NOTICES)
                 for page in ("pages/1_Overview.py", "pages/2_Holdings.py"):
                     self.app.switch_page(page).run()
                     self.assertEqual(list(self.app.exception), [])
-                    self.assertIn(message, self.app.error[0].value)
+                    shown = self.app.info if is_notice else self.app.error
+                    self.assertIn(message, shown[0].value)
                     self.assertEqual(len(self.app.metric), 0)
                     self.assertEqual(len(self.app.dataframe), 0)
                     self.assertNotIn("holdings", self.app.session_state)
                 self.app._page_hash = ""
                 self.app.run()
-                self.assertIn(message, self.app.error[0].value)
+                shown = self.app.info if is_notice else self.app.error
+                self.assertIn(message, shown[0].value)
                 self.upload("fx_upload", None)
                 self.assert_healthy("Family Wealth Navigator")
 
     def test_holdings_and_fx_uploads_work_together_across_navigation(self):
         self.upload("holdings_upload", holdings_csv())
         self.upload("fx_upload", CUSTOM_FX)
-        self.assertIn("Using your uploaded holdings.", self.app.info[0].value)
+        self.assert_footer("Your uploaded data")
         for page in ("Overview", "Holdings", "Home"):
             self.navigate(page)
             self.assertEqual(len(self.app.session_state["holdings"]), 2)

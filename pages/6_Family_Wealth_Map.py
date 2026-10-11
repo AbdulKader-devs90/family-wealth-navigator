@@ -10,10 +10,13 @@ from checkin import (
     public_demo_enabled, save_state, smtp_configured,
 )
 from readiness import check_readiness, readiness_label
+from ui import page_header
 from wealth_map import build_wealth_map
 
-st.title("Family Wealth Map")
-st.write("A private guide that helps your family find everything if you're ever unreachable.")
+page_header(
+    "Family Wealth Map",
+    "A private guide that helps your family find everything if you're ever unreachable.",
+)
 st.html("""
 <style>
 .st-key-checkin_ok button {
