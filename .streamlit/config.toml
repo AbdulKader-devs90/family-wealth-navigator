@@ -4,3 +4,26 @@ address = "0.0.0.0"
 port = 5000
 enableCORS = false
 enableXsrfProtection = false
+
+[client]
+toolbarMode = "minimal"
+
+# Keep colours in step with ui.py.
+[theme]
+base = "light"
+primaryColor = "#0F6E6E"
+backgroundColor = "#F6F7F9"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#14263D"
+linkColor = "#0F6E6E"
+borderColor = "#D9DEE5"
+showWidgetBorder = true
+baseRadius = "medium"
+font = "sans-serif"
+headingFontWeights = 600
+headingFontSizes = ["2.125rem", "1.5rem", "1.2rem"]
+
+[theme.sidebar]
+backgroundColor = "#EDF1F4"
+secondaryBackgroundColor = "#FFFFFF"
+borderColor = "#D3DAE2"

@@ -7,8 +7,13 @@ from data_loader import (
     CSVNotice, DEFAULT_FX_PATH, SUPPORTED_BASE_CURRENCIES, filter_holdings, load_data,
 )
 from overview_charts import asset_type_colors, filter_caption
+from ui import ASSETS_DIR, apply_branding
 
-st.set_page_config(page_title="Family Wealth Navigator", layout="wide")
+st.set_page_config(
+    page_title="Family Wealth Navigator", page_icon=str(ASSETS_DIR / "icon.svg"),
+    layout="wide",
+)
+apply_branding()
 
 
 def home():
@@ -131,15 +136,39 @@ st.sidebar.slider(
 )
 
 page = st.navigation(
-    [
-        st.Page(home, title="Home", default=True),
-        st.Page("pages/1_Overview.py", title="Overview", url_path="overview"),
-        st.Page("pages/2_Holdings.py", title="Holdings", url_path="holdings"),
-        st.Page("pages/3_Performance.py", title="Performance", url_path="performance"),
-        st.Page("pages/4_Liabilities.py", title="Liabilities", url_path="liabilities"),
-        st.Page("pages/5_Readiness_Check.py", title="Readiness Check", url_path="readiness"),
-        st.Page("pages/6_Family_Wealth_Map.py", title="Family Wealth Map", url_path="wealth-map"),
-    ]
+    {
+        "": [
+            st.Page(home, title="Home", icon=":material/home:", default=True),
+        ],
+        "Portfolio": [
+            st.Page(
+                "pages/1_Overview.py", title="Overview",
+                icon=":material/space_dashboard:", url_path="overview",
+            ),
+            st.Page(
+                "pages/2_Holdings.py", title="Holdings",
+                icon=":material/account_balance_wallet:", url_path="holdings",
+            ),
+            st.Page(
+                "pages/3_Performance.py", title="Performance",
+                icon=":material/trending_up:", url_path="performance",
+            ),
+            st.Page(
+                "pages/4_Liabilities.py", title="Liabilities",
+                icon=":material/credit_card:", url_path="liabilities",
+            ),
+        ],
+        "Family": [
+            st.Page(
+                "pages/5_Readiness_Check.py", title="Readiness Check",
+                icon=":material/fact_check:", url_path="readiness",
+            ),
+            st.Page(
+                "pages/6_Family_Wealth_Map.py", title="Family Wealth Map",
+                icon=":material/family_restroom:", url_path="wealth-map",
+            ),
+        ],
+    }
 )
 if public_demo_enabled():
     st.warning(
